@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.venv/
+.env/
+
+# IDE / Editor specific
+.idea/
+.vscode/
+*.swp
+*~
+
+# macOS
+.DS_Store
+# Default ignored files
+/shelf/
+/workspace.xml

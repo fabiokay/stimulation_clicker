@@ -42,11 +42,13 @@ auto_speed_upgrade_cost = 400
 running = True
 
 # --- Critical Click Variables ---
-CRITICAL_CHANCE = 0.10  # 10% chance
+CRITICAL_CHANCE = 0.05  # 5% chance
 CRITICAL_MULTIPLIER = 5 # 5x score on critical
 critical_feedback_text = ""
 critical_feedback_timer = 0
 CRITICAL_FEEDBACK_DURATION = 60 # Frames (e.g., 1 second at 60 FPS)
+critical_chance_upgrade_cost = 1000
+critical_multiplier_upgrade_cost = 1500
 
 
 # --- Flags ---
@@ -58,6 +60,46 @@ auto_clicker_active = False
 button_buy_ball_visible = False
 ball_bought = False
 plus_ten_ball_upgrade_unlocked = False # Flag for the +10 ball bounce upgrade
+button_crit_chance_upgrade_visible = False
+button_crit_multiplier_upgrade_visible = False
+
+# --- Particle System ---
+particles = []
+MAX_PARTICLES = 150 # Adjust for performance/density
+PARTICLE_SPAWN_RATE = 2 # Particles to spawn per frame (if under MAX_PARTICLES)
+
+class Particle:
+    def __init__(self, screen_width, screen_height):
+        self.x = random.randint(0, screen_width)
+        self.y = random.randint(0, screen_height)
+        self.size = random.randint(1, 3)
+        # Slightly brighter colors for better visibility
+        r = random.randint(60, 120)
+        g = random.randint(30, 160)
+        b = random.randint(40, 180)
+        self.color_base = (r, g, b)
+        self.dx = random.uniform(-0.3, 0.3)
+        self.dy = random.uniform(-0.2, 0.2) # Slightly slower vertical drift
+        self.lifetime = random.randint(120, 300) # 2 to 5 seconds at 60 FPS
+        self.initial_lifetime = float(self.lifetime) # Store as float for division
+
+    def update(self):
+        self.x += self.dx
+        self.y += self.dy
+        self.lifetime -= 1
+
+    def draw(self, surface):
+        if self.lifetime > 0:
+            alpha = int(200 * (self.lifetime / self.initial_lifetime)) # Max alpha 200 for subtlety
+            alpha = max(0, min(200, alpha))
+            
+            # Create a temporary surface for alpha blending if not using per-pixel alpha directly
+            # For simple circles, drawing directly with an RGBA color is often fine if supported
+            # pygame.draw.circle(surface, self.color_base + (alpha,), (int(self.x), int(self.y)), self.size)
+            # Using a surface for potentially better alpha control or more complex shapes later
+            particle_surf = pygame.Surface((self.size * 2, self.size * 2), pygame.SRCALPHA)
+            pygame.draw.circle(particle_surf, self.color_base + (alpha,), (self.size, self.size), self.size)
+            surface.blit(particle_surf, (self.x - self.size, self.y - self.size))
 
 # --- Ball Properties ---
 ball_radius = 15
@@ -79,6 +121,22 @@ while running:
     clock.tick(framerate)
     screen.fill(black)
 
+    # --- Particle System Update and Draw ---
+    # Spawn new particles
+    if len(particles) < MAX_PARTICLES:
+        for _ in range(PARTICLE_SPAWN_RATE):
+            if len(particles) < MAX_PARTICLES: # Check again in case loop fills it
+                particles.append(Particle(width, height))
+
+    # Update and draw particles
+    active_particles = []
+    for p in particles:
+        p.update()
+        if p.lifetime > 0:
+            p.draw(screen)
+            active_particles.append(p)
+    particles = active_particles
+
     # --- Check Unlocks ---
     if score >= 100:
         button_x2_visible = True
@@ -92,6 +150,10 @@ while running:
         button_buy_ball_visible = True
     if ball_bought and score >= plus_ten_ball_cost: # Unlock condition for the +10 ball bounce upgrade
         plus_ten_ball_upgrade_unlocked = True
+    if score >= 800: # Unlock condition for critical chance upgrade
+        button_crit_chance_upgrade_visible = True
+    if score >= 1200: # Unlock condition for critical multiplier upgrade
+        button_crit_multiplier_upgrade_visible = True
 
     # --- Draw Main Button ---
     main_button = pygame.draw.rect(screen, grey, [x_coord - 50, y_coord - 150, 100, 50], 0, 10)
@@ -180,6 +242,26 @@ while running:
         screen.blit(auto_speed_text, (button_auto_speed_upgrade.x + 5, button_auto_speed_upgrade.y + 15))
         screen.blit(font.render("Cost: " + str(round(auto_speed_upgrade_cost)), True, white), (button_auto_speed_upgrade.right + 10, button_auto_speed_upgrade.y + 17))
 
+    # --- Draw Critical Upgrade Buttons ---
+    crit_upgrade_y = button_y_start + button_spacing_y * 4 # New row for critical upgrades
+    button_crit_chance_upgrade = None
+    button_crit_multiplier_upgrade = None
+
+    if button_crit_chance_upgrade_visible:
+        button_crit_chance_upgrade = pygame.draw.rect(screen, pink, [button_col1_x, crit_upgrade_y, 100, 50], 0, 10)
+        crit_chance_text = font.render("Crit Chance+", True, black)
+        screen.blit(crit_chance_text, (button_crit_chance_upgrade.x + 5, button_crit_chance_upgrade.y + 15))
+        screen.blit(font.render(f"Cost: {round(critical_chance_upgrade_cost)}", True, white), (button_crit_chance_upgrade.right + 10, button_crit_chance_upgrade.y + 17))
+        screen.blit(font.render(f"({CRITICAL_CHANCE*100:.0f}%)", True, white), (button_crit_chance_upgrade.x + 20, button_crit_chance_upgrade.y - 15))
+
+
+    if button_crit_multiplier_upgrade_visible:
+        button_crit_multiplier_upgrade = pygame.draw.rect(screen, pink, [button_col2_x, crit_upgrade_y, 100, 50], 0, 10)
+        crit_multi_text = font.render("Crit Multi+", True, black)
+        screen.blit(crit_multi_text, (button_crit_multiplier_upgrade.x + 5, button_crit_multiplier_upgrade.y + 15))
+        screen.blit(font.render(f"Cost: {round(critical_multiplier_upgrade_cost)}", True, white), (button_crit_multiplier_upgrade.right + 10, button_crit_multiplier_upgrade.y + 17))
+        screen.blit(font.render(f"(x{CRITICAL_MULTIPLIER:.1f})", True, white), (button_crit_multiplier_upgrade.x + 25, button_crit_multiplier_upgrade.y - 15))
+
     # --- Draw Critical Feedback ---
     if critical_feedback_timer > 0:
         crit_text_surface = font.render(critical_feedback_text, True, pink) # Or another vibrant color
@@ -249,6 +331,18 @@ while running:
                 current_auto_click_delay = max(50, current_auto_click_delay - 50) # Decrease delay, min 50ms
                 auto_speed_upgrade_cost *= 1.8
                 pygame.time.set_timer(AUTO_CLICK_EVENT, current_auto_click_delay) # Re-set timer with new speed
+
+            if button_crit_chance_upgrade and button_crit_chance_upgrade.collidepoint(event.pos) and score >= critical_chance_upgrade_cost:
+                score -= critical_chance_upgrade_cost
+                CRITICAL_CHANCE = min(CRITICAL_CHANCE + 0.01, 0.5) # Increase by 1%, cap at 50%
+                critical_chance_upgrade_cost *= 1.9
+
+            if button_crit_multiplier_upgrade and button_crit_multiplier_upgrade.collidepoint(event.pos) and score >= critical_multiplier_upgrade_cost:
+                score -= critical_multiplier_upgrade_cost
+                CRITICAL_MULTIPLIER += 0.5 # Increase by 0.5
+                critical_multiplier_upgrade_cost *= 2.0
+
+
 
 
         elif event.type == AUTO_CLICK_EVENT and auto_clicker_active:

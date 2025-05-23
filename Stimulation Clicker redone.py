@@ -17,8 +17,8 @@ click_sounds = [
     pygame.mixer.Sound("Audio/Click_4.wav"),
     pygame.mixer.Sound("Audio/Click_5.wav"),
 ]
-sound_upgrade = pygame.mixer.Sound("Audio/Upgrade.wav") # Assuming you might use this later
-sound_unlock = pygame.mixer.Sound("Audio/Unlock.wav")   # Assuming you might use this later
+sound_upgrade = pygame.mixer.Sound("Audio/Upgrade.wav")
+sound_unlock = pygame.mixer.Sound("Audio/Unlock.wav")
 # Load background music
 pygame.mixer.music.load("Audio/Focus.wav")
 pygame.mixer.music.play(-1)
@@ -48,9 +48,11 @@ score_value = 1
 x2_cost = 100 # Cost for "+1" click upgrade
 plus_five_click_cost = 500 # Cost for "+5" click upgrade
 plus_ten_click_cost = 2000 # Cost for "+10" click upgrade
-bounce = 10
+bounce = 10 # Bounce value for the ball
 plus_ten_ball_cost = 400 # Cost for "+10" ball bounce upgrade
-auto_clicker_cost = 200
+auto_clicker_cost = 200 # Cost for auto-clicker
+
+# --- Auto Clicker Variables ---
 auto_click_power = 1 # Amount per auto-click
 auto_power_upgrade_cost = 300
 auto_speed_upgrade_cost = 400

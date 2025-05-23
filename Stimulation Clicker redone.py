@@ -6,7 +6,7 @@ import random # For critical clicks
 pygame.init()
 pygame.mixer.init()
 
-pygame.mixer.music.load("/Users/fabiokempf/PycharmProjects/Clicker/Audio/Focus.wav")
+pygame.mixer.music.load("Audio/Focus.wav")
 pygame.mixer.music.play(-1)
 
 # --- Colors ---

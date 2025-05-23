@@ -1,6 +1,6 @@
 import pygame
 import pygame.mixer
-import sys
+import sys # Not used but good practice
 import random # For critical clicks
 
 pygame.init()
@@ -29,6 +29,7 @@ framerate = 60
 # --- Game Variables ---
 #global score
 score = 0
+click_count = 0 # To count total clicks on the main button
 score_value = 1
 x2_cost = 100 # Cost for "+1" click upgrade
 plus_five_click_cost = 500 # Cost for "+5" click upgrade
@@ -46,9 +47,11 @@ CRITICAL_CHANCE = 0.05  # 5% chance
 CRITICAL_MULTIPLIER = 5 # 5x score on critical
 critical_feedback_text = ""
 critical_feedback_timer = 0
-CRITICAL_FEEDBACK_DURATION = 60 # Frames (e.g., 1 second at 60 FPS)
+CRITICAL_FEEDBACK_DURATION = 10 # Frames (e.g., 1 second at 60 FPS)
 critical_chance_upgrade_cost = 1000
 critical_multiplier_upgrade_cost = 1500
+critical_hit_unlock_cost = 750 # Cost to unlock critical hits
+
 
 
 # --- Flags ---
@@ -62,6 +65,8 @@ ball_bought = False
 plus_ten_ball_upgrade_unlocked = False # Flag for the +10 ball bounce upgrade
 button_crit_chance_upgrade_visible = False
 button_crit_multiplier_upgrade_visible = False
+critical_hit_unlocked = False # Player starts without critical hits
+button_critical_hit_unlock_visible = False
 
 # --- Particle System ---
 particles = []
@@ -150,9 +155,11 @@ while running:
         button_buy_ball_visible = True
     if ball_bought and score >= plus_ten_ball_cost: # Unlock condition for the +10 ball bounce upgrade
         plus_ten_ball_upgrade_unlocked = True
-    if score >= 800: # Unlock condition for critical chance upgrade
+    if score >= 500 and not critical_hit_unlocked: # Unlock condition for critical hit unlock
+        button_critical_hit_unlock_visible = True
+    if critical_hit_unlocked and score >= critical_chance_upgrade_cost: # Unlock condition for critical chance upgrade
         button_crit_chance_upgrade_visible = True
-    if score >= 1200: # Unlock condition for critical multiplier upgrade
+    if critical_hit_unlocked and score >= critical_multiplier_upgrade_cost: # Unlock condition for critical multiplier upgrade
         button_crit_multiplier_upgrade_visible = True
 
     # --- Draw Main Button ---
@@ -246,17 +253,29 @@ while running:
     crit_upgrade_y = button_y_start + button_spacing_y * 4 # New row for critical upgrades
     button_crit_chance_upgrade = None
     button_crit_multiplier_upgrade = None
+    button_critical_hit_unlock = None
 
-    if button_crit_chance_upgrade_visible:
-        button_crit_chance_upgrade = pygame.draw.rect(screen, pink, [button_col1_x, crit_upgrade_y, 100, 50], 0, 10)
+    # --- Draw Critical Hit Unlock Button ---
+    if button_critical_hit_unlock_visible and not critical_hit_unlocked:
+        button_critical_hit_unlock = pygame.draw.rect(screen, pink, [button_col1_x, crit_upgrade_y, 100, 50], 0, 10)
+        unlock_crit_text = font.render("Unlock Crits", True, black)
+        screen.blit(unlock_crit_text, (button_critical_hit_unlock.x + 5, button_critical_hit_unlock.y + 15))
+        screen.blit(font.render(f"Cost: {round(critical_hit_unlock_cost)}", True, white), (button_critical_hit_unlock.right + 10, button_critical_hit_unlock.y + 17))
+
+
+    if critical_hit_unlocked and button_crit_chance_upgrade_visible:
+        # Adjust Y position if unlock button was previously there or manage layout differently
+        crit_chance_y_pos = crit_upgrade_y if not button_critical_hit_unlock_visible else crit_upgrade_y # Or shift down: crit_upgrade_y + button_spacing_y
+        button_crit_chance_upgrade = pygame.draw.rect(screen, pink, [button_col1_x, crit_chance_y_pos, 100, 50], 0, 10)
         crit_chance_text = font.render("Crit Chance+", True, black)
         screen.blit(crit_chance_text, (button_crit_chance_upgrade.x + 5, button_crit_chance_upgrade.y + 15))
         screen.blit(font.render(f"Cost: {round(critical_chance_upgrade_cost)}", True, white), (button_crit_chance_upgrade.right + 10, button_crit_chance_upgrade.y + 17))
         screen.blit(font.render(f"({CRITICAL_CHANCE*100:.0f}%)", True, white), (button_crit_chance_upgrade.x + 20, button_crit_chance_upgrade.y - 15))
 
 
-    if button_crit_multiplier_upgrade_visible:
-        button_crit_multiplier_upgrade = pygame.draw.rect(screen, pink, [button_col2_x, crit_upgrade_y, 100, 50], 0, 10)
+    if critical_hit_unlocked and button_crit_multiplier_upgrade_visible:
+        crit_multi_y_pos = crit_upgrade_y # Or shift down if needed
+        button_crit_multiplier_upgrade = pygame.draw.rect(screen, pink, [button_col2_x, crit_multi_y_pos, 100, 50], 0, 10)
         crit_multi_text = font.render("Crit Multi+", True, black)
         screen.blit(crit_multi_text, (button_crit_multiplier_upgrade.x + 5, button_crit_multiplier_upgrade.y + 15))
         screen.blit(font.render(f"Cost: {round(critical_multiplier_upgrade_cost)}", True, white), (button_crit_multiplier_upgrade.right + 10, button_crit_multiplier_upgrade.y + 17))
@@ -279,15 +298,19 @@ while running:
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if main_button.collidepoint(event.pos):
-                if random.random() < CRITICAL_CHANCE:
-                    # Critical Hit!
-                    crit_amount = score_value * CRITICAL_MULTIPLIER
-                    score += crit_amount
-                    critical_feedback_text = f"CRITICAL! +{crit_amount}"
-                    critical_feedback_timer = CRITICAL_FEEDBACK_DURATION
-                else:
-                    # Normal Click
+                if critical_hit_unlocked: # Only check for crits if unlocked
+                    if random.random() < CRITICAL_CHANCE:
+                        # Critical Hit!
+                        crit_amount = score_value * CRITICAL_MULTIPLIER
+                        score += crit_amount
+                        critical_feedback_text = f"CRITICAL! +{crit_amount}"
+                        critical_feedback_timer = CRITICAL_FEEDBACK_DURATION
+                    else:
+                        # Normal Click
+                        score += score_value
+                else: # If crits not unlocked, always a normal click
                     score += score_value
+                click_count += 1 # Increment click counter
 
 
             if button_x2 and button_x2.collidepoint(event.pos) and score >= x2_cost:
@@ -331,6 +354,11 @@ while running:
                 current_auto_click_delay = max(50, current_auto_click_delay - 50) # Decrease delay, min 50ms
                 auto_speed_upgrade_cost *= 1.8
                 pygame.time.set_timer(AUTO_CLICK_EVENT, current_auto_click_delay) # Re-set timer with new speed
+            
+            if button_critical_hit_unlock and button_critical_hit_unlock.collidepoint(event.pos) and score >= critical_hit_unlock_cost:
+                score -= critical_hit_unlock_cost
+                critical_hit_unlocked = True
+                button_critical_hit_unlock_visible = False # Hide the unlock button
 
             if button_crit_chance_upgrade and button_crit_chance_upgrade.collidepoint(event.pos) and score >= critical_chance_upgrade_cost:
                 score -= critical_chance_upgrade_cost
@@ -378,6 +406,11 @@ while running:
     # --- Show Score ---
     score_text = font.render("Energy: " + str(round(score,0)), True, grey)
     screen.blit(score_text, (10, 10))
+
+    # --- Show Click Count ---
+    click_count_text_surface = font.render("Clicks: " + str(click_count), True, grey)
+    click_count_text_rect = click_count_text_surface.get_rect(topright=(width - 10, 10))
+    screen.blit(click_count_text_surface, click_count_text_rect)
 
     pygame.display.flip()
 

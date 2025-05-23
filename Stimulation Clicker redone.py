@@ -19,6 +19,7 @@ click_sounds = [
 ]
 sound_upgrade = pygame.mixer.Sound("Audio/Upgrade.wav")
 sound_unlock = pygame.mixer.Sound("Audio/Unlock.wav")
+sound_supernova = pygame.mixer.Sound("Audio/Supernova.wav")
 # Load background music
 pygame.mixer.music.load("Audio/Focus.wav")
 pygame.mixer.music.play(-1)
@@ -467,7 +468,7 @@ while running:
                 supernova_ready = False # It's now active, so not "ready" for another click until cooldown
                 supernova_start_time = pygame.time.get_ticks()
                 supernova_cooldown_start_time = pygame.time.get_ticks() # Cooldown timer starts immediately upon activation
-                # Optional: Play a sound effect for Supernova activation
+                sound_supernova.play()
 
 
         elif event.type == AUTO_CLICK_EVENT and auto_clicker_active:

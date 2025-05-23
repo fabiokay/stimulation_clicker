@@ -2,6 +2,7 @@ import pygame
 import pygame.mixer
 import sys # Not used but good practice
 import random # For critical clicks
+import Colors # Importing the colors from the Colors.py file
 
 pygame.init()
 pygame.mixer.init()
@@ -25,13 +26,13 @@ pygame.mixer.music.load("Audio/Focus.wav")
 pygame.mixer.music.play(-1)
 
 # --- Colors ---
-black = pygame.Color("#222431")
-grey  = pygame.Color("#a7b1c1") 
-violet = pygame.Color("#52489C")
-petrol = pygame.Color("#4062BB")
-blue = pygame.Color("#59C3C3")
-white = pygame.Color("#EBEBEB")
-pink = pygame.Color("#F45B69")
+#black = pygame.Color("#222431")
+#grey  = pygame.Color("#a7b1c1") 
+#violet = pygame.Color("#52489C")
+#petrol = pygame.Color("#4062BB")
+#blue = pygame.Color("#59C3C3")
+#white = pygame.Color("#EBEBEB")
+#pink = pygame.Color("#F45B69")
 
 # --- Display Setup ---
 width, height = 1280, 720

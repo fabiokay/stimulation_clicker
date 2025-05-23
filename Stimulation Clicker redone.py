@@ -6,12 +6,26 @@ import random # For critical clicks
 pygame.init()
 pygame.mixer.init()
 
+# --- Audio Setup ---
+pygame.mixer.pre_init(44100, -16, 2, 2048) # Pre-initialize mixer for better performance
+pygame.mixer.set_num_channels(8) # Set number of channels for sound effects
+# Load sound effects
+click_sounds = [
+    pygame.mixer.Sound("Audio/Click_1.wav"),
+    pygame.mixer.Sound("Audio/Click_2.wav"),
+    pygame.mixer.Sound("Audio/Click_3.wav"),
+    pygame.mixer.Sound("Audio/Click_4.wav"),
+    pygame.mixer.Sound("Audio/Click_5.wav"),
+]
+sound_upgrade = pygame.mixer.Sound("Audio/Upgrade.wav") # Assuming you might use this later
+sound_unlock = pygame.mixer.Sound("Audio/Unlock.wav")   # Assuming you might use this later
+# Load background music
 pygame.mixer.music.load("Audio/Focus.wav")
 pygame.mixer.music.play(-1)
 
 # --- Colors ---
 black = pygame.Color("#222431")
-grey  = pygame.Color("#a7b1c1")
+grey  = pygame.Color("#a7b1c1") 
 violet = pygame.Color("#52489C")
 petrol = pygame.Color("#4062BB")
 blue = pygame.Color("#59C3C3")
@@ -19,7 +33,7 @@ white = pygame.Color("#EBEBEB")
 pink = pygame.Color("#F45B69")
 
 # --- Display Setup ---
-width, height = 720, 720
+width, height = 1280, 720
 screen = pygame.display.set_mode([width, height])
 clock = pygame.time.Clock()
 pygame.display.set_caption("StImUlAtIoN ClIcKeR")
@@ -52,7 +66,22 @@ critical_chance_upgrade_cost = 1000
 critical_multiplier_upgrade_cost = 1500
 critical_hit_unlock_cost = 750 # Cost to unlock critical hits
 
+# --- Supernova Variables ---
+SUPERNOVA_DURATION_MS = 10000  # 10 seconds
+SUPERNOVA_COOLDOWN_MS = 120000  # 120 seconds
+SUPERNOVA_CLICK_MULTIPLIER = 20
+supernova_unlock_score = 10000 # Score needed to see the Supernova button
+supernova_active = False
+supernova_start_time = 0
+supernova_cooldown_start_time = 0
+supernova_ready = True # True if not active and not on cooldown
+button_supernova_visible = False
 
+# --- EPS (Energy Per Second) Variables ---
+current_eps = 0.0
+gross_energy_earned_in_interval = 0.0 # Accumulates energy earned for EPS calculation
+last_eps_calc_time = 0      # Will be initialized with pygame.time.get_ticks()
+eps_calculation_interval = 1000 # milliseconds (e.g., 1 second)
 
 # --- Flags ---
 button_x2_visible = False
@@ -161,6 +190,8 @@ while running:
         button_crit_chance_upgrade_visible = True
     if critical_hit_unlocked and score >= critical_multiplier_upgrade_cost: # Unlock condition for critical multiplier upgrade
         button_crit_multiplier_upgrade_visible = True
+    if score >= supernova_unlock_score and not button_supernova_visible and not supernova_active : # Unlock condition for Supernova
+        button_supernova_visible = True
 
     # --- Draw Main Button ---
     main_button = pygame.draw.rect(screen, grey, [x_coord - 50, y_coord - 150, 100, 50], 0, 10)
@@ -281,6 +312,32 @@ while running:
         screen.blit(font.render(f"Cost: {round(critical_multiplier_upgrade_cost)}", True, white), (button_crit_multiplier_upgrade.right + 10, button_crit_multiplier_upgrade.y + 17))
         screen.blit(font.render(f"(x{CRITICAL_MULTIPLIER:.1f})", True, white), (button_crit_multiplier_upgrade.x + 25, button_crit_multiplier_upgrade.y - 15))
 
+    # --- Draw Supernova Button ---
+    button_supernova = None
+    # Place Supernova button in a new row, or adjust existing layout if preferred
+    supernova_button_y = button_y_start + button_spacing_y * 5 
+    if button_supernova_visible:
+        button_color = grey # Default
+        supernova_text_str = "Supernova"
+        current_time_ticks_draw = pygame.time.get_ticks()
+
+        if supernova_active:
+            button_color = pink # Active color
+            remaining_time_s = max(0, (SUPERNOVA_DURATION_MS - (current_time_ticks_draw - supernova_start_time)) // 1000)
+            supernova_text_str = f"Active: {remaining_time_s}s"
+        elif not supernova_ready: # On cooldown
+            button_color = violet # Cooldown color
+            remaining_cooldown_s = max(0, (SUPERNOVA_COOLDOWN_MS - (current_time_ticks_draw - supernova_cooldown_start_time)) // 1000)
+            supernova_text_str = f"CD: {remaining_cooldown_s}s"
+        else: # Ready
+            button_color = blue # Ready color
+            supernova_text_str = "Supernova!"
+        
+        button_supernova = pygame.draw.rect(screen, button_color, [button_col1_x, supernova_button_y, 100, 50], 0, 10) # Standard button size
+        supernova_text_render = font.render(supernova_text_str, True, black if supernova_active or supernova_ready else white) # Text color contrast
+        text_rect_supernova = supernova_text_render.get_rect(center=button_supernova.center)
+        screen.blit(supernova_text_render, text_rect_supernova)
+
     # --- Draw Critical Feedback ---
     if critical_feedback_timer > 0:
         crit_text_surface = font.render(critical_feedback_text, True, pink) # Or another vibrant color
@@ -291,6 +348,17 @@ while running:
         if critical_feedback_timer <= 0:
             critical_feedback_text = "" # Clear text when timer is done
 
+    # --- Supernova State Management ---
+    current_time_ticks_logic = pygame.time.get_ticks()
+    if supernova_active:
+        if current_time_ticks_logic - supernova_start_time >= SUPERNOVA_DURATION_MS:
+            supernova_active = False
+            # Cooldown already started when activated, so no need to set supernova_cooldown_start_time here again.
+            # The button will become visible again if score is still high enough.
+    elif not supernova_ready: # If not active, check if cooldown is over
+        if current_time_ticks_logic - supernova_cooldown_start_time >= SUPERNOVA_COOLDOWN_MS:
+            supernova_ready = True
+
     # --- Handle Events ---
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -298,83 +366,127 @@ while running:
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if main_button.collidepoint(event.pos):
+                base_click_value_for_this_click = score_value
+                if supernova_active:
+                    base_click_value_for_this_click *= SUPERNOVA_CLICK_MULTIPLIER
+
                 if critical_hit_unlocked: # Only check for crits if unlocked
                     if random.random() < CRITICAL_CHANCE:
                         # Critical Hit!
-                        crit_amount = score_value * CRITICAL_MULTIPLIER
+                        # Crit multiplier applies to the (potentially Supernova-boosted) base gain
+                        crit_amount = base_click_value_for_this_click * CRITICAL_MULTIPLIER
                         score += crit_amount
+                        gross_energy_earned_in_interval += crit_amount
                         critical_feedback_text = f"CRITICAL! +{crit_amount}"
                         critical_feedback_timer = CRITICAL_FEEDBACK_DURATION
                     else:
-                        # Normal Click
-                        score += score_value
+                        # Normal Click (Supernova-boosted if active)
+                        score += base_click_value_for_this_click
+                        gross_energy_earned_in_interval += base_click_value_for_this_click
                 else: # If crits not unlocked, always a normal click
-                    score += score_value
+                    score += base_click_value_for_this_click # (Supernova-boosted if active)
+                    gross_energy_earned_in_interval += base_click_value_for_this_click
                 click_count += 1 # Increment click counter
-
+                random.choice(click_sounds).play() # Play a randomly chosen click sound
+                
 
             if button_x2 and button_x2.collidepoint(event.pos) and score >= x2_cost:
                 score -= x2_cost
                 score_value += 1
                 x2_cost *= 1.5
+                sound_upgrade.play()
 
             if button_plus_five_click and button_plus_five_click.collidepoint(event.pos) and score >= plus_five_click_cost:
                 score -= plus_five_click_cost
                 score_value += 5
                 plus_five_click_cost *= 1.6
+                sound_upgrade.play()
 
             if button_plus_ten_click and button_plus_ten_click.collidepoint(event.pos) and score >= plus_ten_click_cost:
                 score -= plus_ten_click_cost
                 score_value += 10
                 plus_ten_click_cost *= 1.8
+                sound_upgrade.play()
 
             if clicker_auto_button and clicker_auto_button.collidepoint(event.pos) and score >= auto_clicker_cost:
                 score -= auto_clicker_cost
                 pygame.time.set_timer(AUTO_CLICK_EVENT, current_auto_click_delay)
                 auto_clicker_active = True
+                # This is an unlock, so it already plays sound_unlock
+                sound_unlock.play() # Play unlock sound
                 button_auto_visible = False
 
             if button_buy_ball and button_buy_ball.collidepoint(event.pos) and score >= 300:
                 score -= 300
                 button_buy_ball_visible = False
                 ball_bought = True
+                sound_unlock.play() # Play unlock sound
 
             if button_plusten_ball and button_plusten_ball.collidepoint(event.pos) and score >= plus_ten_ball_cost:
                 score -= plus_ten_ball_cost
                 bounce += 10
                 plus_ten_ball_cost *= 1.7 # Increase cost for next purchase
+                sound_upgrade.play() # This is an upgrade to an existing feature
             
             if button_auto_power_upgrade and button_auto_power_upgrade.collidepoint(event.pos) and score >= auto_power_upgrade_cost:
                 score -= auto_power_upgrade_cost
-                auto_click_power += 1 # Or some other increment like * 1.5
+                auto_click_power += 1
                 auto_power_upgrade_cost *= 1.7
+                sound_upgrade.play()
 
             if button_auto_speed_upgrade and button_auto_speed_upgrade.collidepoint(event.pos) and score >= auto_speed_upgrade_cost:
                 score -= auto_speed_upgrade_cost
                 current_auto_click_delay = max(50, current_auto_click_delay - 50) # Decrease delay, min 50ms
                 auto_speed_upgrade_cost *= 1.8
                 pygame.time.set_timer(AUTO_CLICK_EVENT, current_auto_click_delay) # Re-set timer with new speed
+                sound_upgrade.play()
             
             if button_critical_hit_unlock and button_critical_hit_unlock.collidepoint(event.pos) and score >= critical_hit_unlock_cost:
                 score -= critical_hit_unlock_cost
                 critical_hit_unlocked = True
+                # This is an unlock, so it already plays sound_unlock
+                sound_unlock.play() # Play unlock sound
                 button_critical_hit_unlock_visible = False # Hide the unlock button
 
             if button_crit_chance_upgrade and button_crit_chance_upgrade.collidepoint(event.pos) and score >= critical_chance_upgrade_cost:
                 score -= critical_chance_upgrade_cost
                 CRITICAL_CHANCE = min(CRITICAL_CHANCE + 0.01, 0.5) # Increase by 1%, cap at 50%
                 critical_chance_upgrade_cost *= 1.9
+                sound_upgrade.play()
 
             if button_crit_multiplier_upgrade and button_crit_multiplier_upgrade.collidepoint(event.pos) and score >= critical_multiplier_upgrade_cost:
                 score -= critical_multiplier_upgrade_cost
                 CRITICAL_MULTIPLIER += 0.5 # Increase by 0.5
                 critical_multiplier_upgrade_cost *= 2.0
-
-
+                sound_upgrade.play()
+            
+            if button_supernova and button_supernova.collidepoint(event.pos) and supernova_ready:
+                supernova_active = True
+                supernova_ready = False # It's now active, so not "ready" for another click until cooldown
+                supernova_start_time = pygame.time.get_ticks()
+                supernova_cooldown_start_time = pygame.time.get_ticks() # Cooldown timer starts immediately upon activation
+                # Optional: Play a sound effect for Supernova activation
 
 
         elif event.type == AUTO_CLICK_EVENT and auto_clicker_active:
             score += auto_click_power
+            gross_energy_earned_in_interval += auto_click_power
+
+    # --- EPS Calculation ---
+    # This should be done after all score updates for the frame (manual, auto, ball)
+    # but before drawing the UI elements that display score/EPS.
+    current_time_ms = pygame.time.get_ticks()
+    if last_eps_calc_time == 0: # Initialize on the first frame
+        last_eps_calc_time = current_time_ms
+
+    if current_time_ms - last_eps_calc_time >= eps_calculation_interval:
+        time_delta_seconds = (current_time_ms - last_eps_calc_time) / 1000.0
+        
+        # Calculate EPS based on gross energy earned during the interval
+        current_eps = gross_energy_earned_in_interval / time_delta_seconds if time_delta_seconds > 0 else 0.0
+        
+        gross_energy_earned_in_interval = 0.0 # Reset for the next interval
+        last_eps_calc_time = current_time_ms
 
     # --- Ball Drawing and Movement ---
     if ball_bought:
@@ -388,9 +500,11 @@ while running:
         if ball_x - ball_radius <= 0 or ball_x + ball_radius >= width:
             ball_dx *= -1
             score += bounce
+            gross_energy_earned_in_interval += bounce
         if ball_y - ball_radius <= 0 or ball_y + ball_radius >= height:
             ball_dy *= -1
             score += bounce
+            gross_energy_earned_in_interval += bounce
 
         # Draw trail
         for i, (tx, ty) in enumerate(trail):
@@ -411,6 +525,12 @@ while running:
     click_count_text_surface = font.render("Clicks: " + str(click_count), True, grey)
     click_count_text_rect = click_count_text_surface.get_rect(topright=(width - 10, 10))
     screen.blit(click_count_text_surface, click_count_text_rect)
+
+    # --- Show EPS ---
+    eps_text_surface = font.render(f"EPS: {current_eps:.1f}", True, grey)
+    # Position it below the click counter, aligned to the right
+    eps_text_rect = eps_text_surface.get_rect(topright=(width - 10, click_count_text_rect.bottom + 5))
+    screen.blit(eps_text_surface, eps_text_rect)
 
     pygame.display.flip()
 

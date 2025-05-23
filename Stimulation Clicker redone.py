@@ -27,13 +27,13 @@ pygame.mixer.music.load("Audio/Focus.wav")
 pygame.mixer.music.play(-1)
 
 # --- Colors ---
-black = pygame.Color("#222431")
-grey  = pygame.Color("#a7b1c1") 
-violet = pygame.Color("#52489C")
-petrol = pygame.Color("#4062BB")
+black = pygame.Color("#141728")
+grey  = pygame.Color("#727880") 
+violet = pygame.Color("#5C3A93")
+petrol = pygame.Color("#387487")
 blue = pygame.Color("#59C3C3")
 white = pygame.Color("#EBEBEB")
-pink = pygame.Color("#EF5DE8")
+pink = pygame.Color("#D154CA")
 
 # --- Display Setup ---
 width, height = 1280, 720
@@ -81,6 +81,10 @@ supernova_start_time = 0
 supernova_cooldown_start_time = 0
 supernova_ready = True # True if not active and not on cooldown
 button_supernova_visible = False
+# New variables for Supernova cooldown upgrade
+supernova_cooldown_upgrade_cost = 7500  # Initial cost
+SUPERNOVA_COOLDOWN_REDUCTION_MS = 10000 # Reduce cooldown by 10 seconds (10000 ms)
+MIN_SUPERNOVA_COOLDOWN_MS = 30000       # Minimum cooldown of 30 seconds
 
 # --- EPS (Energy Per Second) Variables ---
 current_eps = 0.0
@@ -101,6 +105,7 @@ button_crit_chance_upgrade_visible = False
 button_crit_multiplier_upgrade_visible = False
 critical_hit_unlocked = False # Player starts without critical hits
 button_critical_hit_unlock_visible = False
+button_supernova_cooldown_upgrade_visible = False
 
 # --- Particle System ---
 particles = []
@@ -217,6 +222,11 @@ while running:
         button_crit_multiplier_upgrade_visible = True
     if score >= supernova_unlock_score and not button_supernova_visible and not supernova_active : # Unlock condition for Supernova
         button_supernova_visible = True
+    # Visibility for Supernova cooldown upgrade button
+    if button_supernova_visible and SUPERNOVA_COOLDOWN_MS > MIN_SUPERNOVA_COOLDOWN_MS:
+        button_supernova_cooldown_upgrade_visible = True
+    else:
+        button_supernova_cooldown_upgrade_visible = False # Hide if supernova not visible or cooldown at min
 
     # --- Draw Main Button ---
     main_button = pygame.draw.rect(screen, grey, [x_coord - 50, y_coord - 150, 100, 50], 0, 10)
@@ -363,6 +373,18 @@ while running:
         text_rect_supernova = supernova_text_render.get_rect(center=button_supernova.center)
         screen.blit(supernova_text_render, text_rect_supernova)
 
+    # --- Draw Supernova Cooldown Upgrade Button ---
+    button_supernova_cooldown_upgrade = None
+    if button_supernova_cooldown_upgrade_visible: # Visibility controlled by unlock logic
+        # Position it in the second column on the same row as the Supernova button
+        button_supernova_cooldown_upgrade = pygame.draw.rect(screen, blue, [button_col2_x, supernova_button_y, 100, 50], 0, 10)
+        cd_upgrade_text_render = font.render("Nova CD-", True, black)
+        screen.blit(cd_upgrade_text_render, (button_supernova_cooldown_upgrade.x + 10, button_supernova_cooldown_upgrade.y + 15)) # Adjusted text position
+        screen.blit(font.render(f"Cost: {round(supernova_cooldown_upgrade_cost)}", True, white), (button_supernova_cooldown_upgrade.right + 10, button_supernova_cooldown_upgrade.y + 17))
+        # Display current cooldown reduction benefit
+        reduction_text = f"(-{SUPERNOVA_COOLDOWN_REDUCTION_MS/1000:.0f}s)"
+        screen.blit(font.render(reduction_text, True, white), (button_supernova_cooldown_upgrade.x + 20, button_supernova_cooldown_upgrade.y - 15)) # Adjusted text position
+
     # --- Draw Critical Feedback ---
     if critical_feedback_timer > 0:
         crit_text_surface = font.render(critical_feedback_text, True, pink) # Or another vibrant color
@@ -491,6 +513,15 @@ while running:
                 supernova_start_time = pygame.time.get_ticks()
                 supernova_cooldown_start_time = pygame.time.get_ticks() # Cooldown timer starts immediately upon activation
                 sound_supernova.play()
+
+            if button_supernova_cooldown_upgrade and button_supernova_cooldown_upgrade.collidepoint(event.pos) and score >= supernova_cooldown_upgrade_cost:
+                if SUPERNOVA_COOLDOWN_MS > MIN_SUPERNOVA_COOLDOWN_MS:
+                    score -= supernova_cooldown_upgrade_cost
+                    SUPERNOVA_COOLDOWN_MS = max(MIN_SUPERNOVA_COOLDOWN_MS, SUPERNOVA_COOLDOWN_MS - SUPERNOVA_COOLDOWN_REDUCTION_MS)
+                    supernova_cooldown_upgrade_cost *= 1.8 # Increase cost for the next upgrade
+                    sound_upgrade.play()
+                    if SUPERNOVA_COOLDOWN_MS <= MIN_SUPERNOVA_COOLDOWN_MS:
+                        button_supernova_cooldown_upgrade_visible = False # Hide button if min cooldown reached
 
 
         elif event.type == AUTO_CLICK_EVENT and auto_clicker_active:

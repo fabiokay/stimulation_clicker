@@ -33,7 +33,7 @@ violet = pygame.Color("#52489C")
 petrol = pygame.Color("#4062BB")
 blue = pygame.Color("#59C3C3")
 white = pygame.Color("#EBEBEB")
-pink = pygame.Color("#F45B69")
+pink = pygame.Color("#EF5DE8")
 
 # --- Display Setup ---
 width, height = 1280, 720
@@ -105,37 +105,55 @@ button_critical_hit_unlock_visible = False
 # --- Particle System ---
 particles = []
 MAX_PARTICLES = 150 # Adjust for performance/density
-PARTICLE_SPAWN_RATE = 2 # Particles to spawn per frame (if under MAX_PARTICLES)
+PARTICLE_SPAWN_RATE_NORMAL = 2 # Particles to spawn per frame normally
+PARTICLE_SPAWN_RATE_SUPERNOVA = 7 # Particles to spawn per frame during supernova
 
 class Particle:
-    def __init__(self, screen_width, screen_height):
+    def __init__(self, screen_width, screen_height, is_supernova_particle=False):
         self.x = random.randint(0, screen_width)
         self.y = random.randint(0, screen_height)
-        self.size = random.randint(1, 3)
-        # Slightly brighter colors for better visibility
-        r = random.randint(60, 120)
-        g = random.randint(30, 160)
-        b = random.randint(40, 180)
-        self.color_base = (r, g, b)
-        self.dx = random.uniform(-0.3, 0.3)
-        self.dy = random.uniform(-0.2, 0.2) # Slightly slower vertical drift
-        self.lifetime = random.randint(120, 300) # 2 to 5 seconds at 60 FPS
+        self.is_supernova_particle = is_supernova_particle
+
+        if self.is_supernova_particle:
+            self.size = random.randint(2, 5) # Larger and more varied
+            # Brighter colors for supernova
+            r = random.randint(180, 255)
+            g = random.randint(150, 255)
+            b = random.randint(170, 255)
+            self.color_base = (r, g, b)
+            self.dx = random.uniform(-0.6, 0.6) # Slightly faster/more erratic
+            self.dy = random.uniform(-0.5, 0.5)
+            self.lifetime = random.randint(150, 300) # Can be similar or slightly longer
+            self.max_alpha = 255 # Fully opaque capable
+        else:
+            self.size = random.randint(1, 3)
+            # Original colors
+            r = random.randint(60, 120)
+            g = random.randint(30, 160)
+            b = random.randint(40, 180)
+            self.color_base = (r, g, b)
+            self.dx = random.uniform(-0.3, 0.3)
+            self.dy = random.uniform(-0.2, 0.2) # Slightly slower vertical drift
+            self.lifetime = random.randint(120, 300) # 2 to 5 seconds at 60 FPS
+            self.max_alpha = 200 # Original max alpha for subtlety
+
         self.initial_lifetime = float(self.lifetime) # Store as float for division
 
     def update(self):
         self.x += self.dx
         self.y += self.dy
         self.lifetime -= 1
+        # Optional: Wrap particles around screen edges
+        # if self.x > width: self.x = 0
+        # if self.x < 0: self.x = width
+        # if self.y > height: self.y = 0
+        # if self.y < 0: self.y = height
 
     def draw(self, surface):
         if self.lifetime > 0:
-            alpha = int(200 * (self.lifetime / self.initial_lifetime)) # Max alpha 200 for subtlety
-            alpha = max(0, min(200, alpha))
+            alpha = int(self.max_alpha * (self.lifetime / self.initial_lifetime))
+            alpha = max(0, min(self.max_alpha, alpha)) # Ensure alpha is within 0-max_alpha
             
-            # Create a temporary surface for alpha blending if not using per-pixel alpha directly
-            # For simple circles, drawing directly with an RGBA color is often fine if supported
-            # pygame.draw.circle(surface, self.color_base + (alpha,), (int(self.x), int(self.y)), self.size)
-            # Using a surface for potentially better alpha control or more complex shapes later
             particle_surf = pygame.Surface((self.size * 2, self.size * 2), pygame.SRCALPHA)
             pygame.draw.circle(particle_surf, self.color_base + (alpha,), (self.size, self.size), self.size)
             surface.blit(particle_surf, (self.x - self.size, self.y - self.size))
@@ -161,11 +179,13 @@ while running:
     screen.fill(black)
 
     # --- Particle System Update and Draw ---
+    current_spawn_rate = PARTICLE_SPAWN_RATE_SUPERNOVA if supernova_active else PARTICLE_SPAWN_RATE_NORMAL
+
     # Spawn new particles
     if len(particles) < MAX_PARTICLES:
-        for _ in range(PARTICLE_SPAWN_RATE):
+        for _ in range(current_spawn_rate):
             if len(particles) < MAX_PARTICLES: # Check again in case loop fills it
-                particles.append(Particle(width, height))
+                particles.append(Particle(width, height, is_supernova_particle=supernova_active))
 
     # Update and draw particles
     active_particles = []

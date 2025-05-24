@@ -22,6 +22,24 @@ click_sounds = [
 sound_upgrade = pygame.mixer.Sound("Audio/Upgrade.wav")
 sound_unlock = pygame.mixer.Sound("Audio/Unlock.wav")
 sound_supernova = pygame.mixer.Sound("Audio/Supernova.wav")
+sound_ball_bounce = [
+    pygame.mixer.Sound("Audio/Bounce_1.wav"),
+    pygame.mixer.Sound("Audio/Bounce_2.wav"),
+    pygame.mixer.Sound("Audio/Bounce_3.wav"),
+    pygame.mixer.Sound("Audio/Bounce_4.wav"),
+    pygame.mixer.Sound("Audio/Bounce_5.wav"),
+    pygame.mixer.Sound("Audio/Bounce_6.wav"),
+    pygame.mixer.Sound("Audio/Bounce_7.wav"),
+    pygame.mixer.Sound("Audio/Bounce_8.wav"),
+    pygame.mixer.Sound("Audio/Bounce_9.wav"),
+    pygame.mixer.Sound("Audio/Bounce_10.wav"),
+    pygame.mixer.Sound("Audio/Bounce_11.wav"),
+    pygame.mixer.Sound("Audio/Bounce_12.wav"),
+    pygame.mixer.Sound("Audio/Bounce_13.wav"),
+    pygame.mixer.Sound("Audio/Bounce_14.wav"),
+    pygame.mixer.Sound("Audio/Bounce_15.wav"),
+    pygame.mixer.Sound("Audio/Bounce_16.wav"),
+]
 # Load background music
 pygame.mixer.music.load("Audio/Focus.wav")
 pygame.mixer.music.play(-1)
@@ -556,11 +574,13 @@ while running:
         if ball_x - ball_radius <= 0 or ball_x + ball_radius >= width:
             ball_dx *= -1
             score += bounce
+            random.choice(sound_ball_bounce).play() # Play a random bounce sound
             gross_energy_earned_in_interval += bounce
         if ball_y - ball_radius <= 0 or ball_y + ball_radius >= height:
             ball_dy *= -1
             score += bounce
             gross_energy_earned_in_interval += bounce
+            random.choice(sound_ball_bounce).play() # Play a random bounce sound
 
         # Draw trail
         for i, (tx, ty) in enumerate(trail):

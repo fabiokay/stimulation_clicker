@@ -282,13 +282,26 @@ while running:
     screen.blit(main_button_text, (main_button.x + 10, main_button.y + 15))
 
     # --- Define button layout positions ---
-    button_y_start = y_coord - 90 # Adjusted for more rows
-    button_col1_x = x_coord - 160 # X for the left column of buttons
-    button_col2_x = x_coord + 60  # X for the right column of buttons
-    button_spacing_y = 55 # Adjusted for more rows
     button_width, button_height = 100, 50
+    
+    # --- New Column Layout ---
+    button_area_top_y = y_coord - 90  # Top Y for the button area in all columns
+    VERTICAL_SPACING_IN_COLUMN = 55   # Vertical space between button top-edges in a column
+    COLUMN_STRIDE = 220               # Horizontal distance from start of one column to start of next
+                                      # (button_width + space for cost text + inter-column gap)
 
-    # Initialize button variables to None (for click detection)
+    # Calculate X positions for columns to center the block
+    num_columns = 4
+    # Total width of the block: (num_columns - 1) strides for the first N-1 columns, 
+    # plus the width of the actual button in the last column.
+    total_block_width = ( (num_columns - 1) * COLUMN_STRIDE ) + button_width 
+    start_x_block = (width - total_block_width) / 2
+
+    col0_x = start_x_block
+    col1_x = col0_x + COLUMN_STRIDE
+    col2_x = col1_x + COLUMN_STRIDE
+    col3_x = col2_x + COLUMN_STRIDE
+
     button_x2 = None
     button_plus_five_click = None
     button_plus_ten_click = None
@@ -308,92 +321,102 @@ while running:
     button_supernova_cooldown_upgrade = None
 
     # --- Draw Upgrade Buttons ---
-    # Row 0
-    y_row_0 = button_y_start 
+    
+    # --- Column 0: Manual Click Upgrades ---
+    current_y_col0 = button_area_top_y
     if button_x2_visible:
-        button_x2 = pygame.draw.rect(screen, pink, [button_col1_x, y_row_0, button_width, button_height], 0, 10)
+        button_x2 = pygame.draw.rect(screen, pink, [col0_x, current_y_col0, button_width, button_height], 0, 10)
         screen.blit(font.render("buy +1", True, black), (button_x2.x + 10, button_x2.y + 15))
         screen.blit(font.render("Cost: " + str(round(x2_cost)), True, white), (button_x2.right + 10, button_x2.y + 17))
-    if button_auto_visible and not auto_clicker_active:
-        clicker_auto_button = pygame.draw.rect(screen, violet, [button_col2_x, y_row_0, button_width, button_height], 0, 10)
-        screen.blit(font.render("buy auto", True, black), (clicker_auto_button.x + 10, clicker_auto_button.y + 15))
-        screen.blit(font.render("Cost: " + str(auto_clicker_cost), True, white), (clicker_auto_button.right + 10, clicker_auto_button.y + 17))
-
-    # Row 1
-    y_row_1 = button_y_start + button_spacing_y
+        current_y_col0 += VERTICAL_SPACING_IN_COLUMN
     if button_plus_five_click_visible:
-        button_plus_five_click = pygame.draw.rect(screen, blue, [button_col1_x, y_row_1, button_width, button_height], 0, 10)
+        button_plus_five_click = pygame.draw.rect(screen, blue, [col0_x, current_y_col0, button_width, button_height], 0, 10)
         screen.blit(font.render("buy +5", True, black), (button_plus_five_click.x + 10, button_plus_five_click.y + 15))
         screen.blit(font.render("Cost: " + str(round(plus_five_click_cost)), True, white), (button_plus_five_click.right + 10, button_plus_five_click.y + 17))
-    if button_buy_ball_visible and not ball_bought:
-        button_buy_ball = pygame.draw.rect(screen, petrol, [button_col2_x, y_row_1, button_width, button_height], 0, 10)
-        screen.blit(font.render("Buy a Ball!", True, black), (button_buy_ball.x + 5, button_buy_ball.y + 15))
-        screen.blit(font.render("Cost: 300", True, white), (button_buy_ball.right + 10, button_buy_ball.y + 17))
-
-    # Row 2
-    y_row_2 = button_y_start + button_spacing_y * 2
+        current_y_col0 += VERTICAL_SPACING_IN_COLUMN
     if button_plus_ten_click_visible:
-        button_plus_ten_click = pygame.draw.rect(screen, white, [button_col1_x, y_row_2, button_width, button_height], 0, 10)
+        button_plus_ten_click = pygame.draw.rect(screen, white, [col0_x, current_y_col0, button_width, button_height], 0, 10)
         screen.blit(font.render("buy +10", True, black), (button_plus_ten_click.x + 5, button_plus_ten_click.y + 15))
         screen.blit(font.render("Cost: " + str(round(plus_ten_click_cost)), True, white), (button_plus_ten_click.right + 10, button_plus_ten_click.y + 17))
-    if ball_bought and plus_ten_ball_upgrade_unlocked:
-        button_plusten_ball = pygame.draw.rect(screen, white, [button_col2_x, y_row_2, button_width, button_height], 0, 10)
-        screen.blit(font.render("+10 Ball!", True, black), (button_plusten_ball.x + 5, button_plusten_ball.y + 15))
-        screen.blit(font.render("Cost: " + str(round(plus_ten_ball_cost)), True, white), (button_plusten_ball.right + 10, button_plusten_ball.y + 17))
-
-    # Row 3: +20 Click & Auto Power
-    y_row_3 = button_y_start + button_spacing_y * 3
+        current_y_col0 += VERTICAL_SPACING_IN_COLUMN
     if button_plus_twenty_click_visible:
-        button_plus_twenty_click = pygame.draw.rect(screen, coral, [button_col1_x, y_row_3, button_width, button_height], 0, 10)
+        button_plus_twenty_click = pygame.draw.rect(screen, coral, [col0_x, current_y_col0, button_width, button_height], 0, 10)
         screen.blit(font.render("buy +20", True, black), (button_plus_twenty_click.x + 5, button_plus_twenty_click.y + 15))
         screen.blit(font.render("Cost: " + str(round(plus_twenty_click_cost)), True, white), (button_plus_twenty_click.right + 10, button_plus_twenty_click.y + 17))
-    if auto_clicker_active: # Auto Power Upgrade
-        button_auto_power_upgrade = pygame.draw.rect(screen, violet, [button_col2_x, y_row_3, button_width, button_height], 0, 10)
-        screen.blit(font.render("Auto Pwr", True, black), (button_auto_power_upgrade.x + 5, button_auto_power_upgrade.y + 15))
-        screen.blit(font.render("Cost: " + str(round(auto_power_upgrade_cost)), True, white), (button_auto_power_upgrade.right + 10, button_auto_power_upgrade.y + 17))
-        
-    # Row 4: +25 Click & Auto Speed
-    y_row_4 = button_y_start + button_spacing_y * 4
+        current_y_col0 += VERTICAL_SPACING_IN_COLUMN
     if button_plus_twenty_five_click_visible:
-        button_plus_twenty_five_click = pygame.draw.rect(screen, khaki, [button_col1_x, y_row_4, button_width, button_height], 0, 10)
+        button_plus_twenty_five_click = pygame.draw.rect(screen, khaki, [col0_x, current_y_col0, button_width, button_height], 0, 10)
         screen.blit(font.render("buy +25", True, black), (button_plus_twenty_five_click.x + 5, button_plus_twenty_five_click.y + 15))
         screen.blit(font.render("Cost: " + str(round(plus_twenty_five_click_cost)), True, white), (button_plus_twenty_five_click.right + 10, button_plus_twenty_five_click.y + 17))
-    if auto_clicker_active: # Auto Speed Upgrade
-        button_auto_speed_upgrade = pygame.draw.rect(screen, violet, [button_col2_x, y_row_4, button_width, button_height], 0, 10)
-        screen.blit(font.render("Auto Spd", True, black), (button_auto_speed_upgrade.x + 5, button_auto_speed_upgrade.y + 15))
-        screen.blit(font.render("Cost: " + str(round(auto_speed_upgrade_cost)), True, white), (button_auto_speed_upgrade.right + 10, button_auto_speed_upgrade.y + 17))
-
-    # Row 5: +30 Click & Crit Unlock / Crit Chance
-    y_row_5 = button_y_start + button_spacing_y * 5
+        current_y_col0 += VERTICAL_SPACING_IN_COLUMN
     if button_plus_thirty_click_visible:
-        button_plus_thirty_click = pygame.draw.rect(screen, teal, [button_col1_x, y_row_5, button_width, button_height], 0, 10)
-        screen.blit(font.render("buy +30", True, black), (button_plus_thirty_click.x + 5, button_plus_thirty_click.y + 15)) # Consider white text if teal is too dark
+        button_plus_thirty_click = pygame.draw.rect(screen, teal, [col0_x, current_y_col0, button_width, button_height], 0, 10)
+        screen.blit(font.render("buy +30", True, black), (button_plus_thirty_click.x + 5, button_plus_thirty_click.y + 15)) 
         screen.blit(font.render("Cost: " + str(round(plus_thirty_click_cost)), True, white), (button_plus_thirty_click.right + 10, button_plus_thirty_click.y + 17))
-    # Crit Unlock / Chance
+        current_y_col0 += VERTICAL_SPACING_IN_COLUMN
+    if button_plus_fifty_click_visible:
+        button_plus_fifty_click = pygame.draw.rect(screen, crimson, [col0_x, current_y_col0, button_width, button_height], 0, 10)
+        screen.blit(font.render("buy +50", True, white), (button_plus_fifty_click.x + 5, button_plus_fifty_click.y + 15)) 
+        screen.blit(font.render("Cost: " + str(round(plus_fifty_click_cost)), True, white), (button_plus_fifty_click.right + 10, button_plus_fifty_click.y + 17))
+        current_y_col0 += VERTICAL_SPACING_IN_COLUMN
+
+    # --- Column 1: Unlocks ---
+    current_y_col1 = button_area_top_y
+    if button_auto_visible and not auto_clicker_active:
+        clicker_auto_button = pygame.draw.rect(screen, violet, [col1_x, current_y_col1, button_width, button_height], 0, 10)
+        screen.blit(font.render("buy auto", True, black), (clicker_auto_button.x + 10, clicker_auto_button.y + 15))
+        screen.blit(font.render("Cost: " + str(auto_clicker_cost), True, white), (clicker_auto_button.right + 10, clicker_auto_button.y + 17))
+        current_y_col1 += VERTICAL_SPACING_IN_COLUMN
+    if button_buy_ball_visible and not ball_bought:
+        button_buy_ball = pygame.draw.rect(screen, petrol, [col1_x, current_y_col1, button_width, button_height], 0, 10)
+        screen.blit(font.render("Buy a Ball!", True, black), (button_buy_ball.x + 5, button_buy_ball.y + 15))
+        screen.blit(font.render("Cost: 300", True, white), (button_buy_ball.right + 10, button_buy_ball.y + 17))
+        current_y_col1 += VERTICAL_SPACING_IN_COLUMN
     if button_critical_hit_unlock_visible and not critical_hit_unlocked:
-        button_critical_hit_unlock = pygame.draw.rect(screen, pink, [button_col2_x, y_row_5, button_width, button_height], 0, 10)
+        button_critical_hit_unlock = pygame.draw.rect(screen, pink, [col1_x, current_y_col1, button_width, button_height], 0, 10)
         screen.blit(font.render("Unlock Crits", True, black), (button_critical_hit_unlock.x + 5, button_critical_hit_unlock.y + 15))
         screen.blit(font.render(f"Cost: {round(critical_hit_unlock_cost)}", True, white), (button_critical_hit_unlock.right + 10, button_critical_hit_unlock.y + 17))
-    elif critical_hit_unlocked and button_crit_chance_upgrade_visible: # Note: elif
-        button_crit_chance_upgrade = pygame.draw.rect(screen, pink, [button_col2_x, y_row_5, button_width, button_height], 0, 10)
+        current_y_col1 += VERTICAL_SPACING_IN_COLUMN
+
+    # --- Column 2: Feature Upgrades ---
+    current_y_col2 = button_area_top_y
+    if auto_clicker_active: # Auto Power Upgrade
+        button_auto_power_upgrade = pygame.draw.rect(screen, violet, [col2_x, current_y_col2, button_width, button_height], 0, 10)
+        screen.blit(font.render("Auto Pwr", True, black), (button_auto_power_upgrade.x + 5, button_auto_power_upgrade.y + 15))
+        screen.blit(font.render("Cost: " + str(round(auto_power_upgrade_cost)), True, white), (button_auto_power_upgrade.right + 10, button_auto_power_upgrade.y + 17))
+        current_y_col2 += VERTICAL_SPACING_IN_COLUMN
+    if auto_clicker_active: # Auto Speed Upgrade
+        button_auto_speed_upgrade = pygame.draw.rect(screen, violet, [col2_x, current_y_col2, button_width, button_height], 0, 10)
+        screen.blit(font.render("Auto Spd", True, black), (button_auto_speed_upgrade.x + 5, button_auto_speed_upgrade.y + 15))
+        screen.blit(font.render("Cost: " + str(round(auto_speed_upgrade_cost)), True, white), (button_auto_speed_upgrade.right + 10, button_auto_speed_upgrade.y + 17))
+        current_y_col2 += VERTICAL_SPACING_IN_COLUMN
+    if ball_bought and plus_ten_ball_upgrade_unlocked:
+        button_plusten_ball = pygame.draw.rect(screen, white, [col2_x, current_y_col2, button_width, button_height], 0, 10)
+        screen.blit(font.render("+10 Ball!", True, black), (button_plusten_ball.x + 5, button_plusten_ball.y + 15))
+        screen.blit(font.render("Cost: " + str(round(plus_ten_ball_cost)), True, white), (button_plusten_ball.right + 10, button_plusten_ball.y + 17))
+        current_y_col2 += VERTICAL_SPACING_IN_COLUMN
+    if critical_hit_unlocked and button_crit_chance_upgrade_visible: 
+        button_crit_chance_upgrade = pygame.draw.rect(screen, pink, [col2_x, current_y_col2, button_width, button_height], 0, 10)
         screen.blit(font.render("Crit Chance+", True, black), (button_crit_chance_upgrade.x + 5, button_crit_chance_upgrade.y + 15))
         screen.blit(font.render(f"Cost: {round(critical_chance_upgrade_cost)}", True, white), (button_crit_chance_upgrade.right + 10, button_crit_chance_upgrade.y + 17))
         screen.blit(font.render(f"({CRITICAL_CHANCE*100:.0f}%)", True, white), (button_crit_chance_upgrade.x + 20, button_crit_chance_upgrade.y - 15))
-
-    # Row 6: +50 Click & Crit Multiplier
-    y_row_6 = button_y_start + button_spacing_y * 6
-    if button_plus_fifty_click_visible:
-        button_plus_fifty_click = pygame.draw.rect(screen, crimson, [button_col1_x, y_row_6, button_width, button_height], 0, 10)
-        screen.blit(font.render("buy +50", True, white), (button_plus_fifty_click.x + 5, button_plus_fifty_click.y + 15)) # White text for crimson
-        screen.blit(font.render("Cost: " + str(round(plus_fifty_click_cost)), True, white), (button_plus_fifty_click.right + 10, button_plus_fifty_click.y + 17))
+        current_y_col2 += VERTICAL_SPACING_IN_COLUMN
     if critical_hit_unlocked and button_crit_multiplier_upgrade_visible:
-        button_crit_multiplier_upgrade = pygame.draw.rect(screen, pink, [button_col2_x, y_row_6, button_width, button_height], 0, 10)
+        button_crit_multiplier_upgrade = pygame.draw.rect(screen, pink, [col2_x, current_y_col2, button_width, button_height], 0, 10)
         screen.blit(font.render("Crit Multi+", True, black), (button_crit_multiplier_upgrade.x + 5, button_crit_multiplier_upgrade.y + 15))
         screen.blit(font.render(f"Cost: {round(critical_multiplier_upgrade_cost)}", True, white), (button_crit_multiplier_upgrade.right + 10, button_crit_multiplier_upgrade.y + 17))
         screen.blit(font.render(f"(x{CRITICAL_MULTIPLIER:.1f})", True, white), (button_crit_multiplier_upgrade.x + 25, button_crit_multiplier_upgrade.y - 15))
+        current_y_col2 += VERTICAL_SPACING_IN_COLUMN
+    if button_supernova_cooldown_upgrade_visible: 
+        button_supernova_cooldown_upgrade = pygame.draw.rect(screen, blue, [col2_x, current_y_col2, button_width, button_height], 0, 10)
+        screen.blit(font.render("Nova CD-", True, black), (button_supernova_cooldown_upgrade.x + 10, button_supernova_cooldown_upgrade.y + 15))
+        screen.blit(font.render(f"Cost: {round(supernova_cooldown_upgrade_cost)}", True, white), (button_supernova_cooldown_upgrade.right + 10, button_supernova_cooldown_upgrade.y + 17))
+        reduction_text = f"(-{SUPERNOVA_COOLDOWN_REDUCTION_MS/1000:.0f}s)"
+        screen.blit(font.render(reduction_text, True, white), (button_supernova_cooldown_upgrade.x + 20, button_supernova_cooldown_upgrade.y - 15))
+        current_y_col2 += VERTICAL_SPACING_IN_COLUMN
 
-    # Row 7: Supernova & Supernova Cooldown
-    y_row_7 = button_y_start + button_spacing_y * 7
+    # --- Column 3: Supernova ---
+    current_y_col3 = button_area_top_y
     if button_supernova_visible:
         button_color = grey # Default
         supernova_text_str = "Supernova"
@@ -409,16 +432,11 @@ while running:
         else: # Ready
             button_color = blue # Ready color
             supernova_text_str = "Supernova!"
-        button_supernova = pygame.draw.rect(screen, button_color, [button_col1_x, y_row_7, button_width, button_height], 0, 10)
+        button_supernova = pygame.draw.rect(screen, button_color, [col3_x, current_y_col3, button_width, button_height], 0, 10)
         supernova_text_render = font.render(supernova_text_str, True, black if supernova_active or supernova_ready else white) # Text color contrast
         text_rect_supernova = supernova_text_render.get_rect(center=button_supernova.center)
         screen.blit(supernova_text_render, text_rect_supernova)
-    if button_supernova_cooldown_upgrade_visible: # Visibility controlled by unlock logic
-        button_supernova_cooldown_upgrade = pygame.draw.rect(screen, blue, [button_col2_x, y_row_7, button_width, button_height], 0, 10)
-        screen.blit(font.render("Nova CD-", True, black), (button_supernova_cooldown_upgrade.x + 10, button_supernova_cooldown_upgrade.y + 15))
-        screen.blit(font.render(f"Cost: {round(supernova_cooldown_upgrade_cost)}", True, white), (button_supernova_cooldown_upgrade.right + 10, button_supernova_cooldown_upgrade.y + 17))
-        reduction_text = f"(-{SUPERNOVA_COOLDOWN_REDUCTION_MS/1000:.0f}s)"
-        screen.blit(font.render(reduction_text, True, white), (button_supernova_cooldown_upgrade.x + 20, button_supernova_cooldown_upgrade.y - 15))
+        current_y_col3 += VERTICAL_SPACING_IN_COLUMN
 
 
     # --- Draw Critical Feedback ---

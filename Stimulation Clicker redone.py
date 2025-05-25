@@ -141,6 +141,15 @@ RHYTHM_FEEDBACK_COLOR = blue # Using existing blue color from your color definit
 
 main_button_visually_pressed = False # For click feedback
 
+# --- Volume Slider Variables ---
+music_volume = 0.5  # Initial volume (0.0 to 1.0)
+pygame.mixer.music.set_volume(music_volume)
+slider_rect = pygame.Rect(width - 200, height - 40, 150, 20) # Track
+slider_handle_rect = pygame.Rect(slider_rect.x + music_volume * slider_rect.width - 5, slider_rect.centery - 10, 10, 20) # Handle
+slider_dragging = False
+volume_slider_font = pygame.font.Font("freesansbold.ttf", 12)
+
+
 # --- Flags ---
 button_x2_visible = False
 button_plus_five_click_visible = False
@@ -496,6 +505,19 @@ while running:
         if current_time_ticks_logic - supernova_cooldown_start_time >= SUPERNOVA_COOLDOWN_MS:
             supernova_ready = True
 
+    # --- Volume Slider Logic ---
+    # Draw slider
+    pygame.draw.rect(screen, grey, slider_rect, 0, 5)
+    pygame.draw.rect(screen, blue, slider_handle_rect, 0, 3)
+    volume_text = volume_slider_font.render(f"Music Vol: {int(music_volume * 100)}%", True, white)
+    screen.blit(volume_text, (slider_rect.x, slider_rect.y - 20))
+
+    # Update handle position based on current music_volume (in case it's set elsewhere)
+    slider_handle_rect.centerx = slider_rect.x + music_volume * slider_rect.width
+    # Ensure handle stays within slider bounds (important if volume is set programmatically)
+    slider_handle_rect.centerx = max(slider_rect.left + slider_handle_rect.width // 2, min(slider_rect.right - slider_handle_rect.width // 2, slider_handle_rect.centerx))
+
+
     # --- Handle Events ---
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -505,6 +527,23 @@ while running:
             # Check for main button press for visual feedback
             if main_button.collidepoint(event.pos): # Check against the drawn rect of the button
                 main_button_visually_pressed = True
+            
+            # Volume Slider Click
+            if slider_rect.collidepoint(event.pos) or slider_handle_rect.collidepoint(event.pos):
+                slider_dragging = True
+                # Immediately update volume on click
+                mouse_x, _ = event.pos
+                # Calculate new volume based on click position relative to slider track
+                new_volume = (mouse_x - slider_rect.x) / slider_rect.width
+                music_volume = max(0.0, min(1.0, new_volume)) # Clamp between 0 and 1
+                pygame.mixer.music.set_volume(music_volume)
+                slider_handle_rect.centerx = slider_rect.x + music_volume * slider_rect.width
+                # Clamp handle position
+                slider_handle_rect.centerx = max(slider_rect.left + slider_handle_rect.width // 2, min(slider_rect.right - slider_handle_rect.width // 2, slider_handle_rect.centerx))
+
+
+
+
 
             if main_button.collidepoint(event.pos):
                 current_click_time_for_rhythm = pygame.time.get_ticks()
@@ -675,6 +714,19 @@ while running:
         elif event.type == pygame.MOUSEBUTTONUP:
             if main_button_visually_pressed: # Reset visual feedback for main button
                 main_button_visually_pressed = False
+            if slider_dragging:
+                slider_dragging = False
+        
+        elif event.type == pygame.MOUSEMOTION:
+            if slider_dragging:
+                mouse_x, _ = event.pos
+                # Calculate new volume based on mouse position relative to slider track
+                new_volume = (mouse_x - slider_rect.x) / slider_rect.width
+                music_volume = max(0.0, min(1.0, new_volume)) # Clamp between 0 and 1
+                pygame.mixer.music.set_volume(music_volume)
+                slider_handle_rect.centerx = slider_rect.x + music_volume * slider_rect.width
+                # Clamp handle position
+                slider_handle_rect.centerx = max(slider_rect.left + slider_handle_rect.width // 2, min(slider_rect.right - slider_handle_rect.width // 2, slider_handle_rect.centerx))
 
     # --- EPS Calculation ---
     # This should be done after all score updates for the frame (manual, auto, ball)
@@ -745,5 +797,6 @@ while running:
     screen.blit(eps_text_surface, eps_text_rect)
 
     pygame.display.flip()
+
 
 pygame.quit()

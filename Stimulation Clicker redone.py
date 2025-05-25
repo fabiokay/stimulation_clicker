@@ -70,7 +70,7 @@ width, height = 1280, 720
 screen = pygame.display.set_mode([width, height])
 clock = pygame.time.Clock()
 pygame.display.set_caption("StImUlAtIoN ClIcKeR")
-font = pygame.font.Font("freesansbold.ttf", 16)
+font = pygame.font.Font("freesansbold.ttf", 14)
 framerate = 60
 
 # --- Game Variables ---

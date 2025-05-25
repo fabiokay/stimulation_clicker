@@ -1,6 +1,5 @@
 import pygame
 import pygame.mixer
-import sys # Not used but good practice
 import random # For critical clicks
 
 
@@ -125,7 +124,20 @@ MIN_SUPERNOVA_COOLDOWN_MS = 30000       # Minimum cooldown of 30 seconds
 current_eps = 0.0
 gross_energy_earned_in_interval = 0.0 # Accumulates energy earned for EPS calculation
 last_eps_calc_time = 0      # Will be initialized with pygame.time.get_ticks()
-eps_calculation_interval = 1000 # milliseconds (e.g., 1 second)
+eps_calculation_interval = 1000 # milliseconds (e.g., 1 second) # Added from previous diff
+
+# --- Rhythm Bonus Variables ---
+RHYTHM_BPM = 60.0
+MS_PER_BEAT = (60.0 / RHYTHM_BPM) * 1000.0  # Milliseconds per beat (1000ms for 60 BPM)
+RHYTHM_TOLERANCE_MS = 150  # Allowable deviation in ms (+/-)
+MIN_RHYTHM_CLICKS_FOR_BONUS = 5
+last_main_click_time = 0
+consecutive_rhythmic_clicks = 0
+RHYTHM_BONUS_MULTIPLIER_PER_TIER = 0.25 # e.g., 25% of score_value per tier
+rhythm_feedback_text = ""
+rhythm_feedback_timer = 0
+RHYTHM_FEEDBACK_DURATION = 90 # Frames (e.g., 1.5 seconds at 60 FPS), slightly longer to see streak
+RHYTHM_FEEDBACK_COLOR = blue # Using existing blue color from your color definitions
 
 # --- Flags ---
 button_x2_visible = False
@@ -438,6 +450,14 @@ while running:
         screen.blit(supernova_text_render, text_rect_supernova)
         current_y_col3 += VERTICAL_SPACING_IN_COLUMN
 
+    # --- Draw Rhythm Feedback ---
+    if rhythm_feedback_timer > 0:
+        rhythm_text_surface = font.render(rhythm_feedback_text, True, RHYTHM_FEEDBACK_COLOR)
+        # Position it near the critical feedback, perhaps slightly offset or different side
+        rhythm_text_rect = rhythm_text_surface.get_rect(center=(main_button.centerx, main_button.top - 40)) # Adjust Y as needed
+        screen.blit(rhythm_text_surface, rhythm_text_rect)
+        rhythm_feedback_timer -= 1
+
 
     # --- Draw Critical Feedback ---
     if critical_feedback_timer > 0:
@@ -467,30 +487,56 @@ while running:
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if main_button.collidepoint(event.pos):
+                current_click_time_for_rhythm = pygame.time.get_ticks()
                 base_click_value_for_this_click = score_value
+                score_to_add_this_click = 0 # Initialize score to add for this specific click event
+
                 if supernova_active:
                     base_click_value_for_this_click *= SUPERNOVA_CLICK_MULTIPLIER
 
                 if critical_hit_unlocked: # Only check for crits if unlocked
                     if random.random() < CRITICAL_CHANCE:
                         # Critical Hit!
-                        # Crit multiplier applies to the (potentially Supernova-boosted) base gain
                         crit_amount = base_click_value_for_this_click * CRITICAL_MULTIPLIER
-                        score += crit_amount
-                        gross_energy_earned_in_interval += crit_amount
+                        score_to_add_this_click = crit_amount # Crit overrides base
                         critical_feedback_text = f"CRITICAL! +{round(crit_amount)}"
                         critical_feedback_timer = CRITICAL_FEEDBACK_DURATION
                     else:
                         # Normal Click (Supernova-boosted if active)
-                        score += base_click_value_for_this_click
-                        gross_energy_earned_in_interval += base_click_value_for_this_click
+                        score_to_add_this_click = base_click_value_for_this_click
                 else: # If crits not unlocked, always a normal click
-                    score += base_click_value_for_this_click # (Supernova-boosted if active)
-                    gross_energy_earned_in_interval += base_click_value_for_this_click
+                    score_to_add_this_click = base_click_value_for_this_click # (Supernova-boosted if active)
+                
+                score += score_to_add_this_click
+                gross_energy_earned_in_interval += score_to_add_this_click
                 click_count += 1 # Increment click counter
                 random.choice(click_sounds).play() # Play a randomly chosen click sound
                 
+                # Rhythm Bonus Logic
+                if last_main_click_time == 0: # First click in a potential sequence
+                    consecutive_rhythmic_clicks = 1
+                else:
+                    time_diff = current_click_time_for_rhythm - last_main_click_time
+                    if abs(time_diff - MS_PER_BEAT) <= RHYTHM_TOLERANCE_MS:
+                        consecutive_rhythmic_clicks += 1
+                    else: # Rhythm broken
+                        consecutive_rhythmic_clicks = 1 # Current click starts a new sequence of 1
+                last_main_click_time = current_click_time_for_rhythm
 
+                if consecutive_rhythmic_clicks >= MIN_RHYTHM_CLICKS_FOR_BONUS:
+                    bonus_tier = consecutive_rhythmic_clicks - (MIN_RHYTHM_CLICKS_FOR_BONUS - 1)
+                    actual_rhythm_bonus = (score_value * RHYTHM_BONUS_MULTIPLIER_PER_TIER) * bonus_tier
+                    
+                    score += actual_rhythm_bonus
+                    gross_energy_earned_in_interval += actual_rhythm_bonus
+                    
+                    rhythm_feedback_text = f"Rhythm x{consecutive_rhythmic_clicks}! +{round(actual_rhythm_bonus)}"
+                    rhythm_feedback_timer = RHYTHM_FEEDBACK_DURATION
+                elif consecutive_rhythmic_clicks > 1: # Show streak even before bonus
+                    rhythm_feedback_text = f"Rhythm x{consecutive_rhythmic_clicks}"
+                    rhythm_feedback_timer = RHYTHM_FEEDBACK_DURATION
+                # If consecutive_rhythmic_clicks is 1, any existing rhythm_feedback_timer will continue to count down.
+            
             if button_x2 and button_x2.collidepoint(event.pos) and score >= x2_cost:
                 score -= x2_cost
                 score_value += 1

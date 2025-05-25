@@ -18,6 +18,9 @@ click_sounds = [
     pygame.mixer.Sound("Audio/Click_3.wav"),
     pygame.mixer.Sound("Audio/Click_4.wav"),
     pygame.mixer.Sound("Audio/Click_5.wav"),
+    pygame.mixer.Sound("Audio/Click_6.wav"),
+    pygame.mixer.Sound("Audio/Click_7.wav"),
+    pygame.mixer.Sound("Audio/Click_8.wav"),
 ]
 sound_upgrade = pygame.mixer.Sound("Audio/Upgrade.wav")
 sound_unlock = pygame.mixer.Sound("Audio/Unlock.wav")

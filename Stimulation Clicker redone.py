@@ -2,8 +2,6 @@ import pygame
 import pygame.mixer
 import random # For critical clicks
 
-
-
 pygame.init()
 pygame.mixer.init()
 
@@ -21,9 +19,11 @@ click_sounds = [
     pygame.mixer.Sound("Audio/Click_7.wav"),
     pygame.mixer.Sound("Audio/Click_8.wav"),
 ]
+
 sound_upgrade = pygame.mixer.Sound("Audio/Upgrade.wav")
 sound_unlock = pygame.mixer.Sound("Audio/Unlock.wav")
 sound_supernova = pygame.mixer.Sound("Audio/Supernova.wav")
+# Load ball bounce sounds
 sound_ball_bounce = [
     pygame.mixer.Sound("Audio/Bounce_1.wav"),
     pygame.mixer.Sound("Audio/Bounce_2.wav"),
@@ -44,7 +44,7 @@ sound_ball_bounce = [
 ]
 # Load background music
 pygame.mixer.music.load("Audio/Focus.wav")
-pygame.mixer.music.play(-1)
+pygame.mixer.music.play(-1) # play indefinitely
 
 # --- Colors ---
 black = pygame.Color("#141728")
@@ -58,12 +58,12 @@ dark_slate_gray = pygame.Color("#2F4F4F")
 steel_blue = pygame.Color("#4682B4")
 olive_drab = pygame.Color("#6B8E23")
 coral = pygame.Color("#FF7F50")
-khaki = pygame.Color("#F0E68C")
+khaki = pygame.Color("#994C2C")
 teal = pygame.Color("#008080")
 medium_purple = pygame.Color("#9370DB")
 dark_sea_green = pygame.Color("#8FBC8F")
 light_sky_blue = pygame.Color("#87CEFA")
-crimson = pygame.Color("#DC143C")
+crimson = pygame.Color("#740B20")
 
 # --- Display Setup ---
 width, height = 1280, 720

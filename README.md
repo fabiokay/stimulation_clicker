@@ -64,12 +64,17 @@ Stimulation Clicker is an engaging incremental clicker game built with Python an
     ```
     (If you rename the main Python file, use that name instead.)
 
-## ✨ Future Ideas (Optional)
+## ✨ Future Ideas
 
-*   More upgrade types.
-*   Prestige system.
-*   Visual themes.
-*   Achievements.
+*   More upgrade types
+*   Prestige system
+*   Visual themes
+*   Achievements
+*   Offline progress
+*   Add more rhythmical elements
+*   Upgrading rhythm tempo
+*   Unlock more background music to keep track of the rhythm
+
 
 ---
 

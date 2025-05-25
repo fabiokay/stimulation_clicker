@@ -173,7 +173,7 @@ class Particle:
         self.is_supernova_particle = is_supernova_particle
 
         if self.is_supernova_particle:
-            self.size = random.randint(2, 5) # Larger and more varied
+            self.size = random.randint(2, 7) # Larger and more varied
             # Brighter colors for supernova
             r = random.randint(180, 255)
             g = random.randint(150, 255)

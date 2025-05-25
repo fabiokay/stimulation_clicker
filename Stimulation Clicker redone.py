@@ -133,13 +133,14 @@ RHYTHM_TOLERANCE_MS = 150  # Allowable deviation in ms (+/-)
 MIN_RHYTHM_CLICKS_FOR_BONUS = 5
 last_main_click_time = 0
 consecutive_rhythmic_clicks = 0
-RHYTHM_BONUS_MULTIPLIER_PER_TIER = 0.25 # e.g., 25% of score_value per tier
+RHYTHM_BONUS_MULTIPLIER_PER_TIER = 0.5 # e.g., 25% of score_value per tier
 rhythm_feedback_text = ""
 rhythm_feedback_timer = 0
 RHYTHM_FEEDBACK_DURATION = 90 # Frames (e.g., 1.5 seconds at 60 FPS), slightly longer to see streak
 RHYTHM_FEEDBACK_COLOR = blue # Using existing blue color from your color definitions
 
 main_button_visually_pressed = False # For click feedback
+
 # --- Flags ---
 button_x2_visible = False
 button_plus_five_click_visible = False

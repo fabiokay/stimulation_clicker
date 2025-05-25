@@ -220,8 +220,8 @@ class Particle:
 ball_radius = 15
 ball_x, ball_y = width // 2, height // 2
 ball_dx, ball_dy = 3, 4
+ball_color = petrol # Initial ball color
 trail = []
-max_trail_length = 15
 
 # --- Coordinates ---
 x_coord, y_coord = width / 2, height / 2
@@ -697,31 +697,37 @@ while running:
         ball_x += ball_dx
         ball_y += ball_dy
         trail.append((ball_x, ball_y))
-        if len(trail) > max_trail_length:
+        if len(trail) > bounce: # Use bounce value for trail length
             trail.pop(0)
 
         # Bounce and score
         if ball_x - ball_radius <= 0 or ball_x + ball_radius >= width:
             ball_dx *= -1
             score += bounce
+            ball_color = random.choice([violet, petrol, blue, pink, coral, khaki, teal, medium_purple, dark_sea_green, light_sky_blue, crimson, white]) # Change color on bounce
             random.choice(sound_ball_bounce).play() # Play a random bounce sound
             gross_energy_earned_in_interval += bounce
         if ball_y - ball_radius <= 0 or ball_y + ball_radius >= height:
             ball_dy *= -1
             score += bounce
             gross_energy_earned_in_interval += bounce
+            ball_color = random.choice([violet, petrol, blue, pink, coral, khaki, teal, medium_purple, dark_sea_green, light_sky_blue, crimson, white]) # Change color on bounce
             random.choice(sound_ball_bounce).play() # Play a random bounce sound
 
         # Draw trail
         for i, (tx, ty) in enumerate(trail):
-            fade = int(255 * (i + 1) / max_trail_length)
-            trail_color = (37, 150, 190, fade)
+            fade = int(255 * (i + 1) / bounce) # Use bounce value for fade calculation
+            # Use the current ball_color's RGB values and apply the fade alpha
+            current_trail_r = ball_color.r
+            current_trail_g = ball_color.g
+            current_trail_b = ball_color.b
+            trail_color = (current_trail_r, current_trail_g, current_trail_b, fade)
             trail_surf = pygame.Surface((ball_radius * 2, ball_radius * 2), pygame.SRCALPHA)
             pygame.draw.circle(trail_surf, trail_color, (ball_radius, ball_radius), ball_radius)
             screen.blit(trail_surf, (tx - ball_radius, ty - ball_radius))
 
         # Draw Ball
-        pygame.draw.circle(screen, petrol, (ball_x, ball_y), ball_radius)
+        pygame.draw.circle(screen, ball_color, (ball_x, ball_y), ball_radius)
 
     # --- Show Score ---
     score_text = font.render("Energy: " + str(round(score,0)), True, grey)

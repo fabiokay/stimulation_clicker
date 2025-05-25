@@ -139,6 +139,7 @@ rhythm_feedback_timer = 0
 RHYTHM_FEEDBACK_DURATION = 90 # Frames (e.g., 1.5 seconds at 60 FPS), slightly longer to see streak
 RHYTHM_FEEDBACK_COLOR = blue # Using existing blue color from your color definitions
 
+main_button_visually_pressed = False # For click feedback
 # --- Flags ---
 button_x2_visible = False
 button_plus_five_click_visible = False
@@ -288,10 +289,24 @@ while running:
         button_supernova_cooldown_upgrade_visible = False # Hide if supernova not visible or cooldown at min
 
     # --- Draw Main Button ---
-    main_button_rect = [x_coord - 50, y_coord - 150, 100, 50]
-    main_button = pygame.draw.rect(screen, grey, main_button_rect, 0, 10)
+    main_button_original_rect_coords = [x_coord - 50, y_coord - 150, 100, 50]
+    main_button_draw_color = grey
+    main_button_text_color = black
+    
+    # Apply visual feedback if pressed
+    current_button_rect_list = list(main_button_original_rect_coords) # Make a copy
+    current_text_x_offset = 10
+    current_text_y_offset = 15
+
+    if main_button_visually_pressed:
+        main_button_draw_color = grey.lerp(black, 0.2) # Darken by 20%
+        current_button_rect_list[0] += 2 # Offset x
+        current_button_rect_list[1] += 2 # Offset y
+        # Text position is relative to button's top-left, so it moves with the button
+
+    main_button = pygame.draw.rect(screen, main_button_draw_color, current_button_rect_list, 0, 10)
     main_button_text = font.render("Click me!", True, black)
-    screen.blit(main_button_text, (main_button.x + 10, main_button.y + 15))
+    screen.blit(main_button_text, (current_button_rect_list[0] + current_text_x_offset, current_button_rect_list[1] + current_text_y_offset))
 
     # --- Define button layout positions ---
     button_width, button_height = 100, 50
@@ -484,8 +499,12 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
+        
         elif event.type == pygame.MOUSEBUTTONDOWN:
+            # Check for main button press for visual feedback
+            if main_button.collidepoint(event.pos): # Check against the drawn rect of the button
+                main_button_visually_pressed = True
+
             if main_button.collidepoint(event.pos):
                 current_click_time_for_rhythm = pygame.time.get_ticks()
                 base_click_value_for_this_click = score_value
@@ -651,6 +670,10 @@ while running:
         elif event.type == AUTO_CLICK_EVENT and auto_clicker_active:
             score += auto_click_power
             gross_energy_earned_in_interval += auto_click_power
+
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if main_button_visually_pressed: # Reset visual feedback for main button
+                main_button_visually_pressed = False
 
     # --- EPS Calculation ---
     # This should be done after all score updates for the frame (manual, auto, ball)

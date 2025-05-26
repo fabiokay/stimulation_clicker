@@ -157,7 +157,6 @@ click_slider_handle_rect = pygame.Rect(click_slider_rect.x + click_volume * clic
 click_slider_dragging = False
 click_volume_slider_font = pygame.font.Font("freesansbold.ttf", 12)
 
-
 # --- Flags ---
 button_x2_visible = False
 button_plus_five_click_visible = False

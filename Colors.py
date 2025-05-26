@@ -8,3 +8,7 @@ petrol = pygame.Color("#4062BB")
 blue = pygame.Color("#59C3C3")
 white = pygame.Color("#EBEBEB")
 pink = pygame.Color("#F45B69")
+
+
+
+

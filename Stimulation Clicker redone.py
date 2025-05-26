@@ -151,8 +151,8 @@ volume_slider_font = pygame.font.Font("freesansbold.ttf", 12)
 
 # --- Volume Slider for click sounds Variables ---
 click_volume = 0.5  # Initial volume (0.0 to 1.0)
-pygame.mixer.music.set_volume(click_volume)
-click_slider_rect = pygame.Rect(width - 200, height - 80, 150, 20) # Track
+#pygame.mixer.music.set_volume(click_volume)
+click_slider_rect = pygame.Rect(width - 200, height - 90, 150, 20) # Track
 click_slider_handle_rect = pygame.Rect(click_slider_rect.x + click_volume * click_slider_rect.width - 5, click_slider_rect.centery - 10, 10, 20) # Handle
 click_slider_dragging = False
 click_volume_slider_font = pygame.font.Font("freesansbold.ttf", 12)
@@ -549,7 +549,7 @@ while running:
             if main_button.collidepoint(event.pos): # Check against the drawn rect of the button
                 main_button_visually_pressed = True
             
-            # Volume Slider Click
+            # Volume Slider Music 
             if slider_rect.collidepoint(event.pos) or slider_handle_rect.collidepoint(event.pos):
                 slider_dragging = True
                 # Immediately update volume on click
@@ -561,6 +561,19 @@ while running:
                 slider_handle_rect.centerx = slider_rect.x + music_volume * slider_rect.width
                 # Clamp handle position
                 slider_handle_rect.centerx = max(slider_rect.left + slider_handle_rect.width // 2, min(slider_rect.right - slider_handle_rect.width // 2, slider_handle_rect.centerx))
+
+            # Click Volume Slider Click
+            if click_slider_rect.collidepoint(event.pos) or click_slider_handle_rect.collidepoint(event.pos):
+                click_slider_dragging = True
+                # Immediately update volume on click
+                mouse_x, _ = event.pos
+                # Calculate new volume based on click position relative to slider track
+                click_new_volume = (mouse_x - click_slider_rect.x) / click_slider_rect.width
+                click_volume = max(0.0, min(1.0, click_new_volume)) # Clamp between 0 and 1
+                # pygame.mixer.music.set_volume(click_volume) # THIS WAS THE CULPRIT!
+                click_slider_handle_rect.centerx = click_slider_rect.x + click_volume * click_slider_rect.width
+                # Clamp handle position
+                click_slider_handle_rect.centerx = max(click_slider_rect.left + click_slider_handle_rect.width // 2, min(click_slider_rect.right - click_slider_handle_rect.width // 2, click_slider_handle_rect.centerx))
 
             if main_button.collidepoint(event.pos):
                 current_click_time_for_rhythm = pygame.time.get_ticks()
@@ -586,8 +599,11 @@ while running:
                 score += score_to_add_this_click
                 gross_energy_earned_in_interval += score_to_add_this_click
                 click_count += 1 # Increment click counter
-                random.choice(click_sounds).play() # Play a randomly chosen click sound
-                
+                #random.choice(click_sounds).play() # Play a randomly chosen click sound
+                chosen_click_sound = random.choice(click_sounds)
+                chosen_click_sound.set_volume(click_volume) # Apply the click_volume
+                chosen_click_sound.play()
+
                 # Rhythm Bonus Logic
                 if last_main_click_time == 0: # First click in a potential sequence
                     consecutive_rhythmic_clicks = 1
@@ -737,25 +753,22 @@ while running:
                 click_slider_dragging = False
         
         elif event.type == pygame.MOUSEMOTION:
+            mouse_x, _ = event.pos # Get mouse position once for this motion event
+
+            # slider dragging logic for background music volume
             if slider_dragging:
-                mouse_x, _ = event.pos
-                # Calculate new volume based on mouse position relative to slider track
                 new_volume = (mouse_x - slider_rect.x) / slider_rect.width
                 music_volume = max(0.0, min(1.0, new_volume)) # Clamp between 0 and 1
                 pygame.mixer.music.set_volume(music_volume)
                 slider_handle_rect.centerx = slider_rect.x + music_volume * slider_rect.width
-                # Clamp handle position
                 slider_handle_rect.centerx = max(slider_rect.left + slider_handle_rect.width // 2, min(slider_rect.right - slider_handle_rect.width // 2, slider_handle_rect.centerx))
-
-        elif event.type == pygame.MOUSEMOTION:
+            
+            # slider dragging logic for click sounds volume
             if click_slider_dragging:
-                mouse_x, _ = event.pos
-                # Calculate new volume based on mouse position relative to slider track
                 click_new_volume = (mouse_x - click_slider_rect.x) / click_slider_rect.width
-                click_volume_volume = max(0.0, min(1.0, click_new_volume)) # Clamp between 0 and 1
-                pygame.mixer.music.set_volume(click_volume_volume)
-                click_slider_handle_rect.centerx = slider_rect.x + click_volume * click_slider_rect.width
-                # Clamp handle position
+                click_volume = max(0.0, min(1.0, click_new_volume)) # Clamp between 0 and 1
+                #pygame.mixer.music.set_volume(click_volume)
+                click_slider_handle_rect.centerx = click_slider_rect.x + click_volume * click_slider_rect.width
                 click_slider_handle_rect.centerx = max(click_slider_rect.left + click_slider_handle_rect.width // 2, min(click_slider_rect.right - click_slider_handle_rect.width // 2, click_slider_handle_rect.centerx))
 
 

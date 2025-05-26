@@ -139,6 +139,13 @@ rhythm_feedback_timer = 0
 RHYTHM_FEEDBACK_DURATION = 90 # Frames (e.g., 1.5 seconds at 60 FPS), slightly longer to see streak
 RHYTHM_FEEDBACK_COLOR = blue # Using existing blue color from your color definitions
 
+# --- Rhythm Mastery Upgrade Variables ---
+RHYTHM_MASTERY_UNLOCK_STREAK = 100
+rhythm_mastery_cost = 75000  # Cost for the rhythm mastery upgrade
+RHYTHM_MASTERY_POWER_INCREASE = 50 # How much score_value increases
+button_rhythm_mastery_visible = False
+rhythm_mastery_purchased = False
+
 main_button_visually_pressed = False # For click feedback
 
 # --- Volume Slider for background music Variables ---
@@ -175,6 +182,7 @@ button_crit_multiplier_upgrade_visible = False
 critical_hit_unlocked = False # Player starts without critical hits
 button_critical_hit_unlock_visible = False
 button_supernova_cooldown_upgrade_visible = False
+
 
 # --- Particle System ---
 particles = []
@@ -304,6 +312,9 @@ while running:
         button_supernova_cooldown_upgrade_visible = True
     else:
         button_supernova_cooldown_upgrade_visible = False # Hide if supernova not visible or cooldown at min
+    # Visibility for Rhythm Mastery upgrade
+    if consecutive_rhythmic_clicks >= RHYTHM_MASTERY_UNLOCK_STREAK and not rhythm_mastery_purchased:
+        button_rhythm_mastery_visible = True
 
     # --- Draw Main Button ---
     main_button_original_rect_coords = [x_coord - 50, y_coord - 150, 100, 50]
@@ -363,6 +374,7 @@ while running:
     button_crit_multiplier_upgrade = None
     button_supernova = None
     button_supernova_cooldown_upgrade = None
+    button_rhythm_mastery = None # For the new upgrade
 
     # --- Draw Upgrade Buttons ---
     
@@ -480,6 +492,12 @@ while running:
         supernova_text_render = font.render(supernova_text_str, True, black if supernova_active or supernova_ready else white) # Text color contrast
         text_rect_supernova = supernova_text_render.get_rect(center=button_supernova.center)
         screen.blit(supernova_text_render, text_rect_supernova)
+        current_y_col3 += VERTICAL_SPACING_IN_COLUMN
+    
+    if button_rhythm_mastery_visible and not rhythm_mastery_purchased:
+        button_rhythm_mastery = pygame.draw.rect(screen, medium_purple, [col3_x, current_y_col3, button_width, button_height], 0, 10)
+        screen.blit(font.render("Rhythm Boost", True, white), (button_rhythm_mastery.x + 5, button_rhythm_mastery.y + 15))
+        screen.blit(font.render(f"Cost: {rhythm_mastery_cost}", True, white), (button_rhythm_mastery.right + 10, button_rhythm_mastery.y + 17))
         current_y_col3 += VERTICAL_SPACING_IN_COLUMN
 
     # --- Draw Rhythm Feedback ---
@@ -737,6 +755,14 @@ while running:
                     sound_upgrade.play()
                     if SUPERNOVA_COOLDOWN_MS <= MIN_SUPERNOVA_COOLDOWN_MS:
                         button_supernova_cooldown_upgrade_visible = False # Hide button if min cooldown reached
+
+            if button_rhythm_mastery and button_rhythm_mastery.collidepoint(event.pos) and score >= rhythm_mastery_cost:
+                score -= rhythm_mastery_cost
+                score_value += RHYTHM_MASTERY_POWER_INCREASE
+                rhythm_mastery_purchased = True
+                button_rhythm_mastery_visible = False # One-time purchase
+                sound_unlock.play() # Or a special sound if you add one
+
 
 
         elif event.type == AUTO_CLICK_EVENT and auto_clicker_active:

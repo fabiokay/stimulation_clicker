@@ -74,6 +74,7 @@ Stimulation Clicker is an engaging incremental clicker game built with Python an
 *   Add more rhythmical elements
 *   Upgrading rhythm tempo
 *   Unlock more background music to keep track of the rhythm
+*   Integrate the python code in a react app with pyodide through react-py
 
 
 ---

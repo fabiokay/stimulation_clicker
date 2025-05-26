@@ -141,13 +141,21 @@ RHYTHM_FEEDBACK_COLOR = blue # Using existing blue color from your color definit
 
 main_button_visually_pressed = False # For click feedback
 
-# --- Volume Slider Variables ---
+# --- Volume Slider for background music Variables ---
 music_volume = 0.5  # Initial volume (0.0 to 1.0)
 pygame.mixer.music.set_volume(music_volume)
 slider_rect = pygame.Rect(width - 200, height - 40, 150, 20) # Track
 slider_handle_rect = pygame.Rect(slider_rect.x + music_volume * slider_rect.width - 5, slider_rect.centery - 10, 10, 20) # Handle
 slider_dragging = False
 volume_slider_font = pygame.font.Font("freesansbold.ttf", 12)
+
+# --- Volume Slider for click sounds Variables ---
+click_volume = 0.5  # Initial volume (0.0 to 1.0)
+pygame.mixer.music.set_volume(click_volume)
+click_slider_rect = pygame.Rect(width - 200, height - 80, 150, 20) # Track
+click_slider_handle_rect = pygame.Rect(click_slider_rect.x + click_volume * click_slider_rect.width - 5, click_slider_rect.centery - 10, 10, 20) # Handle
+click_slider_dragging = False
+click_volume_slider_font = pygame.font.Font("freesansbold.ttf", 12)
 
 
 # --- Flags ---
@@ -505,7 +513,7 @@ while running:
         if current_time_ticks_logic - supernova_cooldown_start_time >= SUPERNOVA_COOLDOWN_MS:
             supernova_ready = True
 
-    # --- Volume Slider Logic ---
+    # --- Volume Slider Logic background music---
     # Draw slider
     pygame.draw.rect(screen, grey, slider_rect, 0, 5)
     pygame.draw.rect(screen, blue, slider_handle_rect, 0, 3)
@@ -516,6 +524,19 @@ while running:
     slider_handle_rect.centerx = slider_rect.x + music_volume * slider_rect.width
     # Ensure handle stays within slider bounds (important if volume is set programmatically)
     slider_handle_rect.centerx = max(slider_rect.left + slider_handle_rect.width // 2, min(slider_rect.right - slider_handle_rect.width // 2, slider_handle_rect.centerx))
+
+    # --- Volume Slider Logic click sounds ---
+    # Draw slider
+    pygame.draw.rect(screen, grey, click_slider_rect, 0, 5)
+    pygame.draw.rect(screen, blue, click_slider_handle_rect, 0, 3)
+    click_volume_text = click_volume_slider_font.render(f"Click Vol: {int(click_volume * 100)}%", True, white)
+    screen.blit(click_volume_text, (click_slider_rect.x, click_slider_rect.y - 20))
+
+    # Update handle position based on current click_volume (in case it's set elsewhere)
+    click_slider_handle_rect.centerx = click_slider_rect.x + click_volume * click_slider_rect.width
+    # Ensure handle stays within slider bounds (important if volume is set programmatically)
+    click_slider_handle_rect.centerx = max(click_slider_rect.left + click_slider_handle_rect.width // 2, min(click_slider_rect.right - click_slider_handle_rect.width // 2, click_slider_handle_rect.centerx))
+
 
 
     # --- Handle Events ---
@@ -712,6 +733,8 @@ while running:
                 main_button_visually_pressed = False
             if slider_dragging:
                 slider_dragging = False
+            if click_slider_dragging:
+                click_slider_dragging = False
         
         elif event.type == pygame.MOUSEMOTION:
             if slider_dragging:
@@ -723,6 +746,19 @@ while running:
                 slider_handle_rect.centerx = slider_rect.x + music_volume * slider_rect.width
                 # Clamp handle position
                 slider_handle_rect.centerx = max(slider_rect.left + slider_handle_rect.width // 2, min(slider_rect.right - slider_handle_rect.width // 2, slider_handle_rect.centerx))
+
+        elif event.type == pygame.MOUSEMOTION:
+            if click_slider_dragging:
+                mouse_x, _ = event.pos
+                # Calculate new volume based on mouse position relative to slider track
+                click_new_volume = (mouse_x - click_slider_rect.x) / click_slider_rect.width
+                click_volume_volume = max(0.0, min(1.0, click_new_volume)) # Clamp between 0 and 1
+                pygame.mixer.music.set_volume(click_volume_volume)
+                click_slider_handle_rect.centerx = slider_rect.x + click_volume * click_slider_rect.width
+                # Clamp handle position
+                click_slider_handle_rect.centerx = max(click_slider_rect.left + click_slider_handle_rect.width // 2, min(click_slider_rect.right - click_slider_handle_rect.width // 2, click_slider_handle_rect.centerx))
+
+
 
     # --- EPS Calculation ---
     # This should be done after all score updates for the frame (manual, auto, ball)

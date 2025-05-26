@@ -541,10 +541,6 @@ while running:
                 # Clamp handle position
                 slider_handle_rect.centerx = max(slider_rect.left + slider_handle_rect.width // 2, min(slider_rect.right - slider_handle_rect.width // 2, slider_handle_rect.centerx))
 
-
-
-
-
             if main_button.collidepoint(event.pos):
                 current_click_time_for_rhythm = pygame.time.get_ticks()
                 base_click_value_for_this_click = score_value
